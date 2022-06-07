@@ -3,6 +3,7 @@
 #include <stdlib.h>
 //#include <systype.h>
 #include <sys/stat.h>
+#include <time.h>
 
 
 #define PATH_LEN 256
@@ -11,8 +12,7 @@
 void HexDump_byte(FILE *fp, int size);
 void HexDump_1010(FILE *fp, int size);
 int Tsize_Check(FILE *fp);
-const char *get_filetype(struct stat *buf);
-
+//int file_type(int argc, char **argv);
 
 
 void HexDump_byte(FILE *fp, int size)
@@ -82,16 +82,6 @@ void HexDump_1010(FILE *fp, int size)
                     }
                     if( i+1 == size ) break;
             }
-/*
-                    //if(feof(fp) != 0) break;
-                    for(int i=0; i<7; i++){
-                            printf(".\n");
-                    }
-                    if(size>0x130){
-                            fseek(fp, -144, SEEK_END);
-                    }
-*/          //mc= mc+16;
-            //if(feof(fp) != 0) break;
             if( i+1 == size ) break;
         }
 }
@@ -106,42 +96,6 @@ int Tsize_Check(FILE *fp)
 		return total_size;
 }
 
-const char *get_filetype(struct stat *buf)
-{
-		if(S_ISREG(buf->st_mode))
-	    {
-    		    return "regular";
-   	 	}	
-    	if(S_ISDIR(buf->st_mode))
-    	{
-        		return "directory";
-    	}
-    	if(S_ISCHR(buf->st_mode))
-    	{
-        		return "charater";
-    	}
-    	if(S_ISBLK(buf->st_mode))
-    	{
-        		return "block";
-    	}
-    	if(S_ISFIFO(buf->st_mode))
-    	{
-        		return "fifo";
-    	}	   
-    	return "unknown";
-}
-
-/*
-int CalcFileMD5(char *file_name, char *md5_sum)
-{
-		#define MD5SUM_CMD_FMT "md5sum %." STR(PATH_LEN) "s 2>/dev/null"
-		char cmd[PATH_LEN + sizeof (MD5SUM_CMD_FMT)];
-		sprintf(cmd, MD5SUM_CMD_FMT, file_name);
-		#undef MD5SUM_CMD_FMT
-
-		FILE
-}
-*/
 
 int main(int argc, char* argv[])
 {
@@ -168,8 +122,8 @@ int main(int argc, char* argv[])
 		}
 
         printf("----------------------------------------------------------------------\n");
-        printf(" Address:  0 1  2 3  4 5  6 7   8 9  A B  C D  E F  | ascii value   \n");
-        printf("----------------------------------------------------------------------\n");
+		printf("Address :  0 1  2 3  4 5  6 7   8 9  A B  C D  E F  | ascii value     \n");
+		printf("----------------------------------------------------------------------\n");
 
 
 		//file size check
@@ -197,14 +151,42 @@ int main(int argc, char* argv[])
 				HexDump_1010(fp, (0xa0+(total_size%16)));
 		}
 
-
+/*
+ * ---------------------- result -------------------------
+ * file-name       :
+ * file type       :
+ * file size(byte) :
+ * chechsum(md5)   :
+ * create_date     :
+ *
+ */
 
 	  	printf("---------------------- result -------------------------\n");
 		printf("file-name       : %s\n", argv[1]);
-		printf("file type       : %s\n", get_filetype(&statbuf));
+
+		printf("file type       :");	
+	    FILE *fp2 = NULL;
+    	char line[10240];
+		char comm[1024] = "file u-boot.bin";
+    	fp2 = popen(comm ,"r");
+    	while(fgets(line, 10240, fp2) != NULL){
+        	printf(" %s", line);
+    	}
+
 		printf("file size(byte) : %d byte, (0x%08X)\n", total_size, total_size);
-		printf("chechsum(md5)   : \n");//%s\n, cksum);
-		printf("create_date     : \n");//%d\n, credate);
+		
+		printf("chechsum(md5)   :");//%s\n, cksum);
+		FILE *fp3 = NULL;
+		char line2[10240];
+		char comm2[1024] = "md5sum -b u-boot.bin";
+		fp3 = popen(comm2, "r");
+		while(fgets(line2, 10240, fp3) != NULL){
+			printf(" %s", line2);
+		}
+
+		time_t ct = time(NULL);
+		struct tm tm = *localtime(&ct);
+		printf("create_date     : %d-%02d-%02d %d:%d:%d\n", tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 		state = fclose(fp);
 		if(state!=0){
